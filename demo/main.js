@@ -289,15 +289,14 @@ main.start = function () {
 
     var files = [];
 
-    var add_file = function (path, spriter_url, atlas_url) {
+    var add_file = function (path, spriter_url) {
         var file = {};
         file.path = path;
         file.spriter_url = spriter_url;
-        file.atlas_url = atlas_url || "";
         files.push(file);
     }
 
-    add_file("GreyGuy/", "player.scon", "player.tps.json");
+    add_file("GreyGuy/", "player.scon");
 
     var file_index = 0;
     var entity_index = 0;

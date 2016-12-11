@@ -11307,7 +11307,7 @@
 				{
 					"height": 37,
 					"id": 0,
-					"name": "arms/p_arm_idle_a.png",
+					"name": "arms2/p_arm_idle_a.png",
 					"pivot_x": 0.388889,
 					"pivot_y": 0.48717900000000003,
 					"width": 52
@@ -11402,7 +11402,7 @@
 				}
 			],
 			"id": 2,
-			"name": "arms"
+			"name": "arms2"
 		},
 		{
 			"file": [
