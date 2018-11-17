@@ -103,12 +103,10 @@ main.start = function () {
     var camera_y = 0;
     var camera_zoom = 1;
 
-    var enable_render_webgl = false;
-    var enable_render_ctx2d = !!ctx && !enable_render_webgl;
+    var render_webgl = new RenderWebGL(gl);
 
-    add_checkbox_control("2D", enable_render_ctx2d, function (checked) {
-        enable_render_ctx2d = checked;
-    });
+    var enable_render_webgl = true;
+    var enable_render_ctx2d = !!ctx && !enable_render_webgl;
 
     var enable_render_debug_pose = false;
 
@@ -155,7 +153,7 @@ main.start = function () {
 
     var loadFile = function (file, callback) {
         render_ctx2d.dropData(spriter_data, atlas_data);
-        // render_webgl.dropData(spriter_data, atlas_data);
+        render_webgl.dropData(spriter_data, atlas_data);
 
         spriter_pose = null;
         spriter_pose_next = null;
@@ -200,7 +198,7 @@ main.start = function () {
                 var counter_dec = function () {
                     if (--counter === 0) {
                         render_ctx2d.loadData(spriter_data, atlas_data, images);
-                        // render_webgl.loadData(spriter_data, atlas_data, images);
+                        render_webgl.loadData(spriter_data, atlas_data, images);
                         callback();
                     }
                 }
@@ -296,7 +294,7 @@ main.start = function () {
         files.push(file);
     }
 
-    add_file("GreyGuy/", "player.scon");
+    add_file("ninja/", "player.scon");
 
     var file_index = 0;
     var entity_index = 0;
@@ -420,11 +418,11 @@ main.start = function () {
                 });
             }
         }
-
-        if (ctx) {
-            ctx.setTransform(1, 0, 0, 1, 0, 0);
-            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-        }
+        //
+        // if (ctx) {
+        //     ctx.setTransform(1, 0, 0, 1, 0, 0);
+        //     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        // }
 
         if (gl) {
             gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
@@ -593,6 +591,10 @@ main.start = function () {
         if (ctx) {
             ctx.globalAlpha = alpha;
 
+            if (enable_render_ctx2d && enable_render_webgl) {
+                ctx.translate(-ctx.canvas.width / 4, 0);
+            }
+
             // origin at center, x right, y up
             ctx.translate(ctx.canvas.width / 2, ctx.canvas.height / 2);
             ctx.scale(1, -1);
@@ -609,6 +611,30 @@ main.start = function () {
                 render_ctx2d.drawDebugPose(spriter_pose, atlas_data);
             }
         }
+
+
+        if (gl) {
+            var gl_color = render_webgl.gl_color;
+            gl_color[3] = alpha;
+
+            var gl_projection = render_webgl.gl_projection;
+            mat4x4Identity(gl_projection);
+            mat4x4Ortho(gl_projection, -gl.canvas.width / 2, gl.canvas.width / 2, -gl.canvas.height / 2, gl.canvas.height / 2, -1, 1);
+
+            if (enable_render_ctx2d && enable_render_webgl) {
+                mat4x4Translate(gl_projection, gl.canvas.width / 4, 0, 0);
+            }
+
+            mat4x4Translate(gl_projection, -camera_x, -camera_y, 0);
+            mat4x4Scale(gl_projection, camera_zoom, camera_zoom, camera_zoom);
+
+            if (enable_render_webgl) {
+                render_webgl.drawPose(spriter_pose, atlas_data);
+                //mat4x4Translate(gl_projection, 0, -10, 0);
+                //render_webgl.drawPose(spriter_pose_next, atlas_data);
+            }
+        }
+
 
     };
 
