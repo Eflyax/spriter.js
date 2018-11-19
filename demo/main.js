@@ -153,49 +153,27 @@ main.start = function () {
         var anim_key_next;
 
         if (!loading) {
+            entity_keys = spriterData.getEntityKeys();
             spriterPose.update(dt * anim_rate);
             var anim_rate_next = anim_rate * anim_length_next / anim_length;
             spriter_pose_next.update(dt * anim_rate_next);
 
+
             anim_time += dt * anim_rate;
 
+
             if (anim_time >= (anim_length * anim_repeat)) {
-                entity_keys = spriterData.getEntityKeys();
+
                 entity_key = entity_keys[entity_index];
                 anim_keys = spriterData.getAnimKeys(entity_key);
                 if (++anim_index >= anim_keys.length) {
                     anim_index = 0;
                     if (++entity_index >= entity_keys.length) {
                         entity_index = 0;
-                        if (files.length > 1) {
-                            if (++file_index >= files.length) {
-                                file_index = 0;
-                            }
-                            file = files[file_index];
-                            loading = true;
-                            loadFile(file, function () {
-                                loading = false;
-                                entity_keys = spriterData.getEntityKeys();
-                                entity_key = entity_keys[entity_index = 0];
-                                spriterPose.setEntity(entity_key);
-                                spriter_pose_next.setEntity(entity_key);
-                                anim_keys = spriterData.getAnimKeys(entity_key);
-                                anim_key = anim_keys[anim_index = 0];
-                                spriterPose.setAnim(anim_key);
-                                anim_key_next = anim_keys[(anim_index + 1) % anim_keys.length];
-                                spriter_pose_next.setAnim(anim_key_next);
-                                spriterPose.setTime(anim_time = 0);
-                                spriter_pose_next.setTime(anim_time);
-                                anim_length = spriterPose.curAnimLength() || 1000;
-                                anim_length_next = spriter_pose_next.curAnimLength() || 1000;
-                            });
-                            return;
-                        }
                     }
                     entity_keys = spriterData.getEntityKeys();
                     entity_key = entity_keys[entity_index];
                     spriterPose.setEntity(entity_key);
-                    spriter_pose_next.setEntity(entity_key);
                 }
                 entity_keys = spriterData.getEntityKeys();
                 entity_key = entity_keys[entity_index];
@@ -210,11 +188,8 @@ main.start = function () {
                 anim_length_next = spriter_pose_next.curAnimLength() || 1000;
             }
 
-            entity_keys = spriterData.getEntityKeys();
-            entity_key = entity_keys[entity_index];
-            anim_keys = spriterData.getAnimKeys(entity_key);
-            anim_key = anim_keys[anim_index];
-            anim_key_next = anim_keys[(anim_index + 1) % anim_keys.length];
+            // entity_keys = spriterData.getEntityKeys();
+            // entity_key = entity_keys[entity_index];
         }
 
         gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
