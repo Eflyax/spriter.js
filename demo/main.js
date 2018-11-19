@@ -66,6 +66,8 @@ main.start = function () {
 
             spriter_data = new spriter.Data().load(JSON.parse(text));
             spriter_pose = new spriter.Pose(spriter_data);
+
+
             spriter_pose_next = new spriter.Pose(spriter_data);
 
             loadText(file_atlas_url, function (err, atlas_text) {
@@ -121,7 +123,7 @@ main.start = function () {
         files.push(file);
     }
 
-    add_file("ninja/", "player.scon");
+    add_file("player/", "player.scon");
 
     var file_index = 0;
     var entity_index = 0;
