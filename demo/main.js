@@ -26,27 +26,24 @@ main.start = function () {
     var camera_y = 0;
     var camera_zoom = 1;
 
-    var spriter_data = null;
+    var spriterData = null;
     var spriterPose = null;
     var spriter_pose_next = null;
-    var atlas_data = null;
 
     var anim_time = 0;
     var anim_length = 0;
     var anim_length_next = 0;
     var anim_rate = 1;
     var anim_repeat = 2;
-
     var anim_blend = 0.0;
-
     var alpha = 1.0;
+    var files = [];
 
     var loadFile = function (file, callback) {
-        renderWebGL.dropData(spriter_data);
+        renderWebGL.dropData(spriterData);
 
         spriterPose = null;
         spriter_pose_next = null;
-        atlas_data = null;
 
         var file_path = file.path;
         var file_spriter_url = file_path + file.spriter_url;
@@ -58,11 +55,10 @@ main.start = function () {
                 return;
             }
 
-            spriter_data = new spriter.Data().load(JSON.parse(text));
-            spriterPose = new spriter.Pose(spriter_data);
+            spriterData = new spriter.Data().load(JSON.parse(text));
+            spriterPose = new spriter.Pose(spriterData);
 
-
-            spriter_pose_next = new spriter.Pose(spriter_data);
+            spriter_pose_next = new spriter.Pose(spriterData);
 
             loadText(file_atlas_url, function (err, atlas_text) {
                 var images = {};
@@ -73,14 +69,14 @@ main.start = function () {
                 };
                 var counter_dec = function () {
                     if (--counter === 0) {
-                        renderWebGL.loadData(spriter_data, atlas_data, images);
+                        renderWebGL.loadData(spriterData, null, images);
                         callback();
                     }
                 };
 
                 counter_inc();
 
-                spriter_data.folder_array.forEach(function (folder) {
+                spriterData.folder_array.forEach(function (folder) {
                     folder.file_array.forEach(function (file) {
                         switch (file.type) {
                             case 'image':
@@ -105,9 +101,7 @@ main.start = function () {
                 counter_dec();
             });
         });
-    }
-
-    var files = [];
+    }; // end loadFile
 
     var add_file = function (path, spriter_url) {
         var file = {};
@@ -129,11 +123,11 @@ main.start = function () {
     loading = true;
     loadFile(file, function () {
         loading = false;
-        var entity_keys = spriter_data.getEntityKeys();
+        var entity_keys = spriterData.getEntityKeys();
         var entity_key = entity_keys[entity_index = 0];
         spriterPose.setEntity(entity_key);
         spriter_pose_next.setEntity(entity_key);
-        var anim_keys = spriter_data.getAnimKeys(entity_key);
+        var anim_keys = spriterData.getAnimKeys(entity_key);
         var anim_key = anim_keys[anim_index = 0];
         spriterPose.setAnim(anim_key);
         var anim_key_next = anim_keys[(anim_index + 1) % anim_keys.length];
@@ -166,9 +160,9 @@ main.start = function () {
             anim_time += dt * anim_rate;
 
             if (anim_time >= (anim_length * anim_repeat)) {
-                entity_keys = spriter_data.getEntityKeys();
+                entity_keys = spriterData.getEntityKeys();
                 entity_key = entity_keys[entity_index];
-                anim_keys = spriter_data.getAnimKeys(entity_key);
+                anim_keys = spriterData.getAnimKeys(entity_key);
                 if (++anim_index >= anim_keys.length) {
                     anim_index = 0;
                     if (++entity_index >= entity_keys.length) {
@@ -181,11 +175,11 @@ main.start = function () {
                             loading = true;
                             loadFile(file, function () {
                                 loading = false;
-                                entity_keys = spriter_data.getEntityKeys();
+                                entity_keys = spriterData.getEntityKeys();
                                 entity_key = entity_keys[entity_index = 0];
                                 spriterPose.setEntity(entity_key);
                                 spriter_pose_next.setEntity(entity_key);
-                                anim_keys = spriter_data.getAnimKeys(entity_key);
+                                anim_keys = spriterData.getAnimKeys(entity_key);
                                 anim_key = anim_keys[anim_index = 0];
                                 spriterPose.setAnim(anim_key);
                                 anim_key_next = anim_keys[(anim_index + 1) % anim_keys.length];
@@ -198,14 +192,14 @@ main.start = function () {
                             return;
                         }
                     }
-                    entity_keys = spriter_data.getEntityKeys();
+                    entity_keys = spriterData.getEntityKeys();
                     entity_key = entity_keys[entity_index];
                     spriterPose.setEntity(entity_key);
                     spriter_pose_next.setEntity(entity_key);
                 }
-                entity_keys = spriter_data.getEntityKeys();
+                entity_keys = spriterData.getEntityKeys();
                 entity_key = entity_keys[entity_index];
-                anim_keys = spriter_data.getAnimKeys(entity_key);
+                anim_keys = spriterData.getAnimKeys(entity_key);
                 anim_key = anim_keys[anim_index];
                 spriterPose.setAnim(anim_key);
                 anim_key_next = anim_keys[(anim_index + 1) % anim_keys.length];
@@ -216,9 +210,9 @@ main.start = function () {
                 anim_length_next = spriter_pose_next.curAnimLength() || 1000;
             }
 
-            entity_keys = spriter_data.getEntityKeys();
+            entity_keys = spriterData.getEntityKeys();
             entity_key = entity_keys[entity_index];
-            anim_keys = spriter_data.getAnimKeys(entity_key);
+            anim_keys = spriterData.getAnimKeys(entity_key);
             anim_key = anim_keys[anim_index];
             anim_key_next = anim_keys[(anim_index + 1) % anim_keys.length];
         }
@@ -276,7 +270,7 @@ main.start = function () {
                     } else {
                         object.world_space.copy(object.local_space);
                     }
-                    var folder = spriter_data.folder_array[object.folder_index];
+                    var folder = spriterData.folder_array[object.folder_index];
                     var file = folder && folder.file_array[object.file_index];
                     if (file) {
                         var offset_x = (0.5 - object.pivot.x) * file.width;

@@ -116,22 +116,22 @@
             </timeline>
             <timeline id="13" obj="4" name="bone_004" object_type="bone">
                 <key id="0" spin="0">
-                    <bone x="35.717791" y="63.374233" angle="272.726311"/>
+                    <bone x="34.202639" y="61.859081" angle="272.726311"/>
                 </key>
             </timeline>
             <timeline id="14" obj="5" name="bone_005" object_type="bone">
                 <key id="0" spin="0">
-                    <bone x="-39.607362" y="63.374233" angle="264.530905"/>
+                    <bone x="-41.122514" y="61.859081" angle="264.530905"/>
                 </key>
             </timeline>
             <timeline id="15" name="SlashFX">
                 <key id="0" spin="0">
-                    <object folder="0" file="9" x="-69.522225" y="596.938682" angle="0" a="0"/>
+                    <object folder="0" file="9" x="-71.037377" y="595.42353" angle="0" a="0"/>
                 </key>
             </timeline>
             <timeline id="16" obj="6" name="bone_006" object_type="bone">
                 <key id="0" spin="0">
-                    <bone x="0.840336" y="66.386555" angle="90.392431"/>
+                    <bone x="-0.674816" y="64.871403" angle="90.392431"/>
                 </key>
             </timeline>
             <timeline id="17" obj="7" name="bone_007" object_type="bone">
