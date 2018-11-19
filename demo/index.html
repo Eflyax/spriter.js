@@ -3,6 +3,13 @@
 <head>
     <meta charset="utf-8"/>
     <title>Spriter JavaScript Demo</title>
+
+    <script>
+        var spriterData = null;
+        var spriterPose = null;
+        var spriter_pose_next = null;
+    </script>
+
     <script type="text/javascript">CLOSURE_NO_DEPS = true</script>
     <script type="text/javascript" src="goog.js"></script>
     <script type="text/javascript" src="spriter.js"></script>
@@ -10,10 +17,23 @@
     <script type="text/javascript" src="atlas.js"></script>
     <script type="text/javascript" src="render-ctx2d.js"></script>
     <script type="text/javascript" src="render-webgl.js"></script>
+    <script type="text/javascript" src="loaders.js"></script>
     <script type="text/javascript" src="main.js"></script>
-    <script type="text/javascript">window.addEventListener('load', function (event) {
-        main.start();
-    }, false);</script>
+    <script type="text/javascript">
+        window.addEventListener('load', function (event) {
+            var webGlCanvas = document.getElementById('canvas');
+            webGlCanvas.width = window.innerWidth;
+            webGlCanvas.height = window.innerHeight;
+            webGlCanvas.style.position = 'absolute';
+            webGlCanvas.style.width = webGlCanvas.width + 'px';
+            webGlCanvas.style.height = webGlCanvas.height + 'px';
+            webGlCanvas.style.zIndex = -2;
+            var gl = webGlCanvas.getContext('webgl');
+            var renderWebGL = new RenderWebGL(gl);
+
+            main.start(renderWebGL, gl);
+        }, false);
+    </script>
 </head>
 <body>
 <canvas id="canvas"></canvas>

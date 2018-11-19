@@ -2,16 +2,8 @@ goog.provide('main');
 goog.require('spriter');
 goog.require('RenderWebGL');
 
-main.start = function () {
-    var webGlCanvas = document.getElementById('canvas');
-    webGlCanvas.width = window.innerWidth;
-    webGlCanvas.height = window.innerHeight;
-    webGlCanvas.style.position = 'absolute';
-    webGlCanvas.style.width = webGlCanvas.width + 'px';
-    webGlCanvas.style.height = webGlCanvas.height + 'px';
-    webGlCanvas.style.zIndex = -2;
+main.start = function (renderWebGL, gl) {
 
-    var gl = webGlCanvas.getContext('webgl');
 
     window.addEventListener('resize', function () {
         webGlCanvas.width = window.innerWidth;
@@ -20,16 +12,13 @@ main.start = function () {
         webGlCanvas.style.height = webGlCanvas.height + 'px';
     });
 
-    var renderWebGL = new RenderWebGL(gl);
 
     var camera_x = 0;
     var camera_y = 0;
     var camera_zoom = 1;
-
     var spriter_data = null;
     var spriterPose = null;
     var spriter_pose_next = null;
-    var atlas_data = null;
 
     var anim_time = 0;
     var anim_length = 0;
@@ -41,72 +30,6 @@ main.start = function () {
 
     var alpha = 1.0;
 
-    var loadFile = function (file, callback) {
-        renderWebGL.dropData(spriter_data);
-
-        spriterPose = null;
-        spriter_pose_next = null;
-        atlas_data = null;
-
-        var file_path = file.path;
-        var file_spriter_url = file_path + file.spriter_url;
-        var file_atlas_url = (file.atlas_url) ? (file_path + file.atlas_url) : ('');
-
-        loadText(file_spriter_url, function (err, text) {
-            if (err) {
-                callback();
-                return;
-            }
-
-            spriter_data = new spriter.Data().load(JSON.parse(text));
-            spriterPose = new spriter.Pose(spriter_data);
-
-
-            spriter_pose_next = new spriter.Pose(spriter_data);
-
-            loadText(file_atlas_url, function (err, atlas_text) {
-                var images = {};
-
-                var counter = 0;
-                var counter_inc = function () {
-                    counter++;
-                };
-                var counter_dec = function () {
-                    if (--counter === 0) {
-                        renderWebGL.loadData(spriter_data, atlas_data, images);
-                        callback();
-                    }
-                };
-
-                counter_inc();
-
-                spriter_data.folder_array.forEach(function (folder) {
-                    folder.file_array.forEach(function (file) {
-                        switch (file.type) {
-                            case 'image':
-                                var image_key = file.name;
-                                counter_inc();
-                                images[image_key] = loadImage(file_path + file.name, (function (file) {
-                                    return function (err, image) {
-                                        if (err) {
-                                            console.log("error loading:", image && image.src || file.name);
-                                        }
-                                        counter_dec();
-                                    }
-                                })(file));
-                                break;
-                            default:
-                                console.log("TODO: load", file.type, file.name);
-                                break;
-                        }
-                    });
-                });
-
-                counter_dec();
-            });
-        });
-    }
-
     var files = [];
 
     var add_file = function (path, spriter_url) {
@@ -114,7 +37,7 @@ main.start = function () {
         file.path = path;
         file.spriter_url = spriter_url;
         files.push(file);
-    }
+    };
 
     add_file("player/", "player.scon");
 
@@ -127,13 +50,15 @@ main.start = function () {
     var file = files[file_index];
 
     loading = true;
-    loadFile(file, function () {
+    renderWebGL.dropData(spriterData);
+
+    loadFile(file, renderWebGL, function () {
         loading = false;
-        var entity_keys = spriter_data.getEntityKeys();
+        var entity_keys = spriterData.getEntityKeys();
         var entity_key = entity_keys[entity_index = 0];
         spriterPose.setEntity(entity_key);
         spriter_pose_next.setEntity(entity_key);
-        var anim_keys = spriter_data.getAnimKeys(entity_key);
+        var anim_keys = spriterData.getAnimKeys(entity_key);
         var anim_key = anim_keys[anim_index = 0];
         spriterPose.setAnim(anim_key);
         var anim_key_next = anim_keys[(anim_index + 1) % anim_keys.length];
@@ -166,9 +91,9 @@ main.start = function () {
             anim_time += dt * anim_rate;
 
             if (anim_time >= (anim_length * anim_repeat)) {
-                entity_keys = spriter_data.getEntityKeys();
+                entity_keys = spriterData.getEntityKeys();
                 entity_key = entity_keys[entity_index];
-                anim_keys = spriter_data.getAnimKeys(entity_key);
+                anim_keys = spriterData.getAnimKeys(entity_key);
                 if (++anim_index >= anim_keys.length) {
                     anim_index = 0;
                     if (++entity_index >= entity_keys.length) {
@@ -181,11 +106,11 @@ main.start = function () {
                             loading = true;
                             loadFile(file, function () {
                                 loading = false;
-                                entity_keys = spriter_data.getEntityKeys();
+                                entity_keys = spriterData.getEntityKeys();
                                 entity_key = entity_keys[entity_index = 0];
                                 spriterPose.setEntity(entity_key);
                                 spriter_pose_next.setEntity(entity_key);
-                                anim_keys = spriter_data.getAnimKeys(entity_key);
+                                anim_keys = spriterData.getAnimKeys(entity_key);
                                 anim_key = anim_keys[anim_index = 0];
                                 spriterPose.setAnim(anim_key);
                                 anim_key_next = anim_keys[(anim_index + 1) % anim_keys.length];
@@ -198,14 +123,14 @@ main.start = function () {
                             return;
                         }
                     }
-                    entity_keys = spriter_data.getEntityKeys();
+                    entity_keys = spriterData.getEntityKeys();
                     entity_key = entity_keys[entity_index];
                     spriterPose.setEntity(entity_key);
                     spriter_pose_next.setEntity(entity_key);
                 }
-                entity_keys = spriter_data.getEntityKeys();
+                entity_keys = spriterData.getEntityKeys();
                 entity_key = entity_keys[entity_index];
-                anim_keys = spriter_data.getAnimKeys(entity_key);
+                anim_keys = spriterData.getAnimKeys(entity_key);
                 anim_key = anim_keys[anim_index];
                 spriterPose.setAnim(anim_key);
                 anim_key_next = anim_keys[(anim_index + 1) % anim_keys.length];
@@ -216,9 +141,9 @@ main.start = function () {
                 anim_length_next = spriter_pose_next.curAnimLength() || 1000;
             }
 
-            entity_keys = spriter_data.getEntityKeys();
+            entity_keys = spriterData.getEntityKeys();
             entity_key = entity_keys[entity_index];
-            anim_keys = spriter_data.getAnimKeys(entity_key);
+            anim_keys = spriterData.getAnimKeys(entity_key);
             anim_key = anim_keys[anim_index];
             anim_key_next = anim_keys[(anim_index + 1) % anim_keys.length];
         }
@@ -276,7 +201,7 @@ main.start = function () {
                     } else {
                         object.world_space.copy(object.local_space);
                     }
-                    var folder = spriter_data.folder_array[object.folder_index];
+                    var folder = spriterData.folder_array[object.folder_index];
                     var file = folder && folder.file_array[object.file_index];
                     if (file) {
                         var offset_x = (0.5 - object.pivot.x) * file.width;
@@ -344,45 +269,3 @@ main.start = function () {
 
     requestAnimationFrame(loop);
 };
-
-function loadText(url, callback) {
-    var req = new XMLHttpRequest();
-    if (url) {
-        req.open("GET", url, true);
-        req.responseType = 'text';
-        req.addEventListener('error', function () {
-            callback("error", null);
-        });
-        req.addEventListener('abort', function () {
-            callback("abort", null);
-        });
-        req.addEventListener('load', function () {
-                if (req.status === 200) {
-                    callback(null, req.response);
-                } else {
-                    callback(req.response, null);
-                }
-            },
-            false);
-        req.send();
-    } else {
-        callback("error", null);
-    }
-    return req;
-}
-
-function loadImage(url, callback) {
-    var image = new Image();
-    image.crossOrigin = "Anonymous";
-    image.addEventListener('error', function () {
-        callback("error", null);
-    });
-    image.addEventListener('abort', function () {
-        callback("abort", null);
-    });
-    image.addEventListener('load', function () {
-        callback(null, image);
-    });
-    image.src = url;
-    return image;
-}

@@ -162,7 +162,7 @@ RenderWebGL.prototype.loadData = function(spriter_data, atlas_data, images) {
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl_wrap_t);
     });
   } else {
-    spriter_data.folder_array.forEach(function(folder) {
+    spriterData.folder_array.forEach(function(folder) {
       folder.file_array.forEach(function(file) {
         switch (file.type) {
           case 'image':
