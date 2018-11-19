@@ -35,11 +35,10 @@ main.start = function () {
     var anim_length_next = 0;
     var anim_rate = 1;
     var anim_repeat = 2;
-    var anim_blend = 0.0;
     var alpha = 1.0;
     var files = [];
 
-    var loadFile = function (file, callback) {
+    var loadFile = function (files, callback) {
         renderWebGL.dropData(spriterData);
 
         spriterPose = null;
@@ -57,6 +56,11 @@ main.start = function () {
 
             spriterData = new spriter.Data().load(JSON.parse(text));
             spriterPose = new spriter.Pose(spriterData);
+
+            var data = new spriter.Data().load(JSON.parse(text));
+            var pose = new spriter.Pose(data);
+            pose.setEntity("Medieval Mage");
+            pose.setAnim("Idle");
 
             spriter_pose_next = new spriter.Pose(spriterData);
 
@@ -124,6 +128,7 @@ main.start = function () {
     loadFile(file, function () {
         loading = false;
         var entity_keys = spriterData.getEntityKeys();
+
         var entity_key = entity_keys[entity_index = 0];
         spriterPose.setEntity(entity_key);
         spriter_pose_next.setEntity(entity_key);
@@ -131,6 +136,7 @@ main.start = function () {
         var anim_key = anim_keys[anim_index = 0];
         spriterPose.setAnim(anim_key);
         var anim_key_next = anim_keys[(anim_index + 1) % anim_keys.length];
+
         spriter_pose_next.setAnim(anim_key_next);
         spriterPose.setTime(anim_time = 0);
         spriter_pose_next.setTime(anim_time);
@@ -158,9 +164,7 @@ main.start = function () {
             var anim_rate_next = anim_rate * anim_length_next / anim_length;
             spriter_pose_next.update(dt * anim_rate_next);
 
-
             anim_time += dt * anim_rate;
-
 
             if (anim_time >= (anim_length * anim_repeat)) {
 
