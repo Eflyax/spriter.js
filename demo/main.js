@@ -28,11 +28,8 @@ main.start = function () {
 
     var spriterData = null;
     var spriterPose = null;
-    var spriter_pose_next = null;
-
     var anim_time = 0;
     var anim_length = 0;
-    var anim_length_next = 0;
     var anim_rate = 1;
     var anim_repeat = 2;
     var alpha = 1.0;
@@ -42,8 +39,6 @@ main.start = function () {
         renderWebGL.dropData(spriterData);
 
         spriterPose = null;
-        spriter_pose_next = null;
-
         var file_path = file.path;
         var file_spriter_url = file_path + file.spriter_url;
         var file_atlas_url = (file.atlas_url) ? (file_path + file.atlas_url) : ('');
@@ -61,8 +56,6 @@ main.start = function () {
             var pose = new spriter.Pose(data);
             pose.setEntity("Medieval Mage");
             pose.setAnim("Idle");
-
-            spriter_pose_next = new spriter.Pose(spriterData);
 
             loadText(file_atlas_url, function (err, atlas_text) {
                 var images = {};
@@ -131,17 +124,11 @@ main.start = function () {
 
         var entity_key = entity_keys[entity_index = 0];
         spriterPose.setEntity(entity_key);
-        spriter_pose_next.setEntity(entity_key);
         var anim_keys = spriterData.getAnimKeys(entity_key);
         var anim_key = anim_keys[anim_index = 0];
         spriterPose.setAnim(anim_key);
-        var anim_key_next = anim_keys[(anim_index + 1) % anim_keys.length];
-
-        spriter_pose_next.setAnim(anim_key_next);
         spriterPose.setTime(anim_time = 0);
-        spriter_pose_next.setTime(anim_time);
         anim_length = spriterPose.curAnimLength() || 1000;
-        anim_length_next = spriter_pose_next.curAnimLength() || 1000;
     });
 
     var prev_time = 0;
@@ -156,16 +143,11 @@ main.start = function () {
         var entity_key;
         var anim_keys;
         var anim_key;
-        var anim_key_next;
 
         if (!loading) {
             entity_keys = spriterData.getEntityKeys();
             spriterPose.update(dt * anim_rate);
-            var anim_rate_next = anim_rate * anim_length_next / anim_length;
-            spriter_pose_next.update(dt * anim_rate_next);
-
             anim_time += dt * anim_rate;
-
             if (anim_time >= (anim_length * anim_repeat)) {
 
                 entity_key = entity_keys[entity_index];
@@ -184,12 +166,8 @@ main.start = function () {
                 anim_keys = spriterData.getAnimKeys(entity_key);
                 anim_key = anim_keys[anim_index];
                 spriterPose.setAnim(anim_key);
-                anim_key_next = anim_keys[(anim_index + 1) % anim_keys.length];
-                spriter_pose_next.setAnim(anim_key_next);
                 spriterPose.setTime(anim_time = 0);
-                spriter_pose_next.setTime(anim_time);
                 anim_length = spriterPose.curAnimLength() || 1000;
-                anim_length_next = spriter_pose_next.curAnimLength() || 1000;
             }
         }
 
@@ -201,8 +179,6 @@ main.start = function () {
             return;
         }
         spriterPose.strike();
-        spriter_pose_next.strike();
-
         spriterPose.object_array.forEach(function (object) {
             switch (object.type) {
                 case 'sprite':
