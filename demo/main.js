@@ -2,7 +2,7 @@ goog.provide('main');
 
 goog.require('spriter');
 goog.require('atlas');
-goog.require('RenderCtx2D');
+goog.require('RenderWebGL');
 
 main.start = function () {
     document.body.style.margin = '0px';
@@ -49,43 +49,13 @@ main.start = function () {
         controls.appendChild(control);
     };
 
-    var messages = document.createElement('div');
-    messages.style.position = 'absolute';
-    messages.style.left = '0px';
-    messages.style.right = '0px';
-    messages.style.bottom = '0px';
-    messages.style.textAlign = 'center';
-    messages.style.zIndex = -1; // behind controls
-    document.body.appendChild(messages);
-
-    var canvas = document.createElement('canvas');
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    canvas.style.position = 'absolute';
-    canvas.style.width = canvas.width + 'px';
-    canvas.style.height = canvas.height + 'px';
-    canvas.style.zIndex = -1; // behind controls
-
-    document.body.appendChild(canvas);
-
-    var ctx = canvas.getContext('2d');
-
-    window.addEventListener('resize', function () {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        canvas.style.width = canvas.width + 'px';
-        canvas.style.height = canvas.height + 'px';
-    });
-
-    var render_ctx2d = new RenderCtx2D(ctx);
-
     var canvas_gl = document.createElement('canvas');
     canvas_gl.width = window.innerWidth;
     canvas_gl.height = window.innerHeight;
     canvas_gl.style.position = 'absolute';
     canvas_gl.style.width = canvas_gl.width + 'px';
     canvas_gl.style.height = canvas_gl.height + 'px';
-    canvas_gl.style.zIndex = -2; // behind 2D context canvas
+    canvas_gl.style.zIndex = -2;
 
     document.body.appendChild(canvas_gl);
 
@@ -98,30 +68,23 @@ main.start = function () {
         canvas_gl.style.height = canvas_gl.height + 'px';
     });
 
+    var render_webgl = new RenderWebGL(gl);
 
     var camera_x = 0;
     var camera_y = 0;
     var camera_zoom = 1;
 
-    var render_webgl = new RenderWebGL(gl);
-
     var enable_render_webgl = true;
-    var enable_render_ctx2d = !!ctx && !enable_render_webgl;
+
+    add_checkbox_control("GL", enable_render_webgl, function (checked) {
+        enable_render_webgl = checked;
+    });
+
 
     var enable_render_debug_pose = false;
 
     add_checkbox_control("2D Debug Pose", enable_render_debug_pose, function (checked) {
         enable_render_debug_pose = checked;
-    });
-
-    // sound player (Web Audio Context)
-    var player_web = {};
-    player_web.ctx = AudioContext && new AudioContext();
-    player_web.mute = true;
-    player_web.sounds = {};
-
-    add_checkbox_control("Mute", player_web.mute, function (checked) {
-        player_web.mute = checked;
     });
 
     var spriter_data = null;
@@ -152,7 +115,6 @@ main.start = function () {
     });
 
     var loadFile = function (file, callback) {
-        render_ctx2d.dropData(spriter_data, atlas_data);
         render_webgl.dropData(spriter_data, atlas_data);
 
         spriter_pose = null;
@@ -194,87 +156,35 @@ main.start = function () {
                 var counter = 0;
                 var counter_inc = function () {
                     counter++;
-                }
+                };
                 var counter_dec = function () {
                     if (--counter === 0) {
-                        render_ctx2d.loadData(spriter_data, atlas_data, images);
                         render_webgl.loadData(spriter_data, atlas_data, images);
                         callback();
                     }
-                }
+                };
 
                 counter_inc();
 
-                if (!err && atlas_text) {
-                    atlas_data = new atlas.Data().importTpsText(atlas_text);
-
-                    // load atlas page images
-                    var dir_path = file_atlas_url.slice(0, file_atlas_url.lastIndexOf('/'));
-                    atlas_data.pages.forEach(function (page) {
-                        var image_key = page.name;
-                        var image_url = dir_path + "/" + image_key;
-                        counter_inc();
-                        images[image_key] = loadImage(image_url, (function (page) {
-                            return function (err, image) {
-                                if (err) {
-                                    console.log("error loading:", image && image.src || page.name);
-                                }
-                                page.w = page.w || image.width;
-                                page.h = page.h || image.height;
-                                counter_dec();
-                            }
-                        })(page));
-                    });
-                } else {
-                    spriter_data.folder_array.forEach(function (folder) {
-                        folder.file_array.forEach(function (file) {
-                            switch (file.type) {
-                                case 'image':
-                                    var image_key = file.name;
-                                    counter_inc();
-                                    images[image_key] = loadImage(file_path + file.name, (function (file) {
-                                        return function (err, image) {
-                                            if (err) {
-                                                console.log("error loading:", image && image.src || file.name);
-                                            }
-                                            counter_dec();
-                                        }
-                                    })(file));
-                                    break;
-                                case 'sound':
-                                    break;
-                                default:
-                                    console.log("TODO: load", file.type, file.name);
-                                    break;
-                            }
-                        });
-                    });
-                }
-
-                // with an atlas, still need to load the sound files
                 spriter_data.folder_array.forEach(function (folder) {
                     folder.file_array.forEach(function (file) {
                         switch (file.type) {
-                            case 'sound':
-                                if (player_web.ctx) {
-                                    counter_inc();
-                                    loadSound(file_path + file.name, (function (file) {
-                                        return function (err, buffer) {
-                                            if (err) {
-                                                console.log("error loading sound", file.name);
-                                            }
-                                            player_web.ctx.decodeAudioData(buffer, function (buffer) {
-                                                    player_web.sounds[file.name] = buffer;
-                                                },
-                                                function () {
-                                                    console.log("error decoding sound", file.name);
-                                                });
-                                            counter_dec();
+                            case 'image':
+                                var image_key = file.name;
+                                counter_inc();
+                                images[image_key] = loadImage(file_path + file.name, (function (file) {
+                                    return function (err, image) {
+                                        if (err) {
+                                            console.log("error loading:", image && image.src || file.name);
                                         }
-                                    })(file));
-                                } else {
-                                    console.log("TODO: load", file.type, file.name);
-                                }
+                                        counter_dec();
+                                    }
+                                })(file));
+                                break;
+                            case 'sound':
+                                break;
+                            default:
+                                console.log("TODO: load", file.type, file.name);
                                 break;
                         }
                     });
@@ -287,10 +197,11 @@ main.start = function () {
 
     var files = [];
 
-    var add_file = function (path, spriter_url) {
+    var add_file = function (path, spriter_url, atlas_url) {
         var file = {};
         file.path = path;
         file.spriter_url = spriter_url;
+        file.atlas_url = atlas_url || "";
         files.push(file);
     }
 
@@ -303,7 +214,6 @@ main.start = function () {
     var loading = false;
 
     var file = files[file_index];
-    messages.innerHTML = "loading";
     loading = true;
     loadFile(file, function () {
         loading = false;
@@ -328,7 +238,7 @@ main.start = function () {
         requestAnimationFrame(loop);
 
         var dt = time - (prev_time || time);
-        prev_time = time; // ms
+        prev_time = time;
 
         var entity_keys;
         var entity_key;
@@ -356,7 +266,6 @@ main.start = function () {
                                 file_index = 0;
                             }
                             file = files[file_index];
-                            messages.innerHTML = "loading";
                             loading = true;
                             loadFile(file, function () {
                                 loading = false;
@@ -400,35 +309,11 @@ main.start = function () {
             anim_keys = spriter_data.getAnimKeys(entity_key);
             anim_key = anim_keys[anim_index];
             anim_key_next = anim_keys[(anim_index + 1) % anim_keys.length];
-            messages.innerHTML = "entity: " + entity_key + ", anim: " + anim_key + ", next anim: " + anim_key_next + "<br>" + file.path + file.spriter_url;
-            if (spriter_pose.event_array.length > 0) {
-                messages.innerHTML += "<br>events: " + spriter_pose.event_array;
-            }
-            if (spriter_pose.sound_array.length > 0) {
-                messages.innerHTML += "<br>sounds: " + spriter_pose.sound_array;
-            }
-            if (spriter_pose.tag_array.length > 0) {
-                messages.innerHTML += "<br>tags: " + spriter_pose.tag_array;
-            }
-            var var_map_keys = Object.keys(spriter_pose.var_map);
-            if (var_map_keys.length > 0) {
-                messages.innerHTML += "<br>vars: ";
-                var_map_keys.forEach(function (key) {
-                    messages.innerHTML += "<br>" + key + " : " + spriter_pose.var_map[key];
-                });
-            }
         }
-        //
-        // if (ctx) {
-        //     ctx.setTransform(1, 0, 0, 1, 0, 0);
-        //     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-        // }
 
-        if (gl) {
-            gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
-            gl.clearColor(0, 0, 0, 0);
-            gl.clear(gl.COLOR_BUFFER_BIT);
-        }
+        gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+        gl.clearColor(0, 0, 0, 0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
 
         if (loading) {
             return;
@@ -437,28 +322,8 @@ main.start = function () {
         spriter_pose.strike();
         spriter_pose_next.strike();
 
-        spriter_pose.sound_array.forEach(function (sound) {
-            if (!player_web.mute) {
-                if (player_web.ctx) {
-                    var source = player_web.ctx.createBufferSource();
-                    source.buffer = player_web.sounds[sound.name];
-                    var gain = player_web.ctx.createGain();
-                    gain.gain = sound.volume;
-                    var stereo_panner = player_web.ctx.createStereoPanner();
-                    stereo_panner.pan.value = sound.panning;
-                    source.connect(gain);
-                    gain.connect(stereo_panner);
-                    stereo_panner.connect(player_web.ctx.destination);
-                    source.start(0);
-                } else {
-                    console.log("TODO: play sound", sound.name, sound.volume, sound.panning);
-                }
-            }
-        });
-
         var spin = 1;
 
-        // blend next pose bone into pose bone
         spriter_pose.bone_array.forEach(function (bone, bone_index) {
             var bone_next = spriter_pose_next.bone_array[bone_index];
             if (!bone_next) {
@@ -512,7 +377,6 @@ main.start = function () {
             }
         });
 
-        // compute bone world space
         spriter_pose.bone_array.forEach(function (bone) {
             var parent_bone = spriter_pose.bone_array[bone.parent_index];
             if (parent_bone) {
@@ -522,7 +386,6 @@ main.start = function () {
             }
         });
 
-        // compute object world space
         spriter_pose.object_array.forEach(function (object) {
             switch (object.type) {
                 case 'sprite':
@@ -588,54 +451,18 @@ main.start = function () {
             }
         });
 
-        if (ctx) {
-            ctx.globalAlpha = alpha;
+        var gl_color = render_webgl.gl_color;
+        gl_color[3] = alpha;
 
-            if (enable_render_ctx2d && enable_render_webgl) {
-                ctx.translate(-ctx.canvas.width / 4, 0);
-            }
+        var gl_projection = render_webgl.gl_projection;
+        mat4x4Identity(gl_projection);
+        mat4x4Ortho(gl_projection, -gl.canvas.width / 2, gl.canvas.width / 2, -gl.canvas.height / 2, gl.canvas.height / 2, -1, 1);
+        mat4x4Translate(gl_projection, -camera_x, -camera_y, 0);
+        mat4x4Scale(gl_projection, camera_zoom, camera_zoom, camera_zoom);
 
-            // origin at center, x right, y up
-            ctx.translate(ctx.canvas.width / 2, ctx.canvas.height / 2);
-            ctx.scale(1, -1);
-
-            ctx.translate(-camera_x, -camera_y);
-            ctx.scale(camera_zoom, camera_zoom);
-            ctx.lineWidth = 1 / camera_zoom;
-
-            if (enable_render_ctx2d) {
-                render_ctx2d.drawPose(spriter_pose, atlas_data);
-            }
-
-            if (enable_render_debug_pose) {
-                render_ctx2d.drawDebugPose(spriter_pose, atlas_data);
-            }
+        if (enable_render_webgl) {
+            render_webgl.drawPose(spriter_pose, atlas_data);
         }
-
-
-        if (gl) {
-            var gl_color = render_webgl.gl_color;
-            gl_color[3] = alpha;
-
-            var gl_projection = render_webgl.gl_projection;
-            mat4x4Identity(gl_projection);
-            mat4x4Ortho(gl_projection, -gl.canvas.width / 2, gl.canvas.width / 2, -gl.canvas.height / 2, gl.canvas.height / 2, -1, 1);
-
-            if (enable_render_ctx2d && enable_render_webgl) {
-                mat4x4Translate(gl_projection, gl.canvas.width / 4, 0, 0);
-            }
-
-            mat4x4Translate(gl_projection, -camera_x, -camera_y, 0);
-            mat4x4Scale(gl_projection, camera_zoom, camera_zoom, camera_zoom);
-
-            if (enable_render_webgl) {
-                render_webgl.drawPose(spriter_pose, atlas_data);
-                //mat4x4Translate(gl_projection, 0, -10, 0);
-                //render_webgl.drawPose(spriter_pose_next, atlas_data);
-            }
-        }
-
-
     };
 
     requestAnimationFrame(loop);
