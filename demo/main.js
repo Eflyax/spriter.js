@@ -187,9 +187,6 @@ main.start = function () {
                 anim_length = spriterPose.curAnimLength() || 1000;
                 anim_length_next = spriter_pose_next.curAnimLength() || 1000;
             }
-
-            // entity_keys = spriterData.getEntityKeys();
-            // entity_key = entity_keys[entity_index];
         }
 
         gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
@@ -199,42 +196,8 @@ main.start = function () {
         if (loading) {
             return;
         }
-
         spriterPose.strike();
         spriter_pose_next.strike();
-
-        var spin = 1;
-
-        spriterPose.bone_array.forEach(function (bone, bone_index) {
-            var bone_next = spriter_pose_next.bone_array[bone_index];
-            if (!bone_next) {
-                return;
-            }
-            spriter.Space.tween(bone.local_space, bone_next.local_space, anim_blend, spin, bone.local_space);
-        });
-
-        spriterPose.object_array.forEach(function (object, object_index) {
-            var object_next = spriter_pose_next.object_array[object_index];
-            if (object_next) {
-                return;
-            }
-            switch (object.type) {
-                case 'bone':
-                    spriter.Space.tween(object.local_space, object_next.local_space, anim_blend, spin, object.local_space);
-                    break;
-                default:
-                    throw new Error(object.type);
-            }
-        });
-
-        spriterPose.bone_array.forEach(function (bone) {
-            var parent_bone = spriterPose.bone_array[bone.parent_index];
-            if (parent_bone) {
-                spriter.Space.combine(parent_bone.world_space, bone.local_space, bone.world_space);
-            } else {
-                bone.world_space.copy(bone.local_space);
-            }
-        });
 
         spriterPose.object_array.forEach(function (object) {
             switch (object.type) {
@@ -251,45 +214,6 @@ main.start = function () {
                         var offset_x = (0.5 - object.pivot.x) * file.width;
                         var offset_y = (0.5 - object.pivot.y) * file.height;
                         spriter.Space.translate(object.world_space, offset_x, offset_y);
-                    }
-                    break;
-                case 'bone':
-                    var bone = spriterPose.bone_array[object.parent_index];
-                    if (bone) {
-                        spriter.Space.combine(bone.world_space, object.local_space, object.world_space);
-                    } else {
-                        object.world_space.copy(object.local_space);
-                    }
-                    break;
-                case 'box':
-                    var bone = spriterPose.bone_array[object.parent_index];
-                    if (bone) {
-                        spriter.Space.combine(bone.world_space, object.local_space, object.world_space);
-                    } else {
-                        object.world_space.copy(object.local_space);
-                    }
-                    var entity = spriterPose.curEntity();
-                    var box_info = entity.obj_info_map[object.name];
-                    if (box_info) {
-                        var offset_x = (0.5 - object.pivot.x) * box_info.w;
-                        var offset_y = (0.5 - object.pivot.y) * box_info.h;
-                        spriter.Space.translate(object.world_space, offset_x, offset_y);
-                    }
-                    break;
-                case 'point':
-                    var bone = spriterPose.bone_array[object.parent_index];
-                    if (bone) {
-                        spriter.Space.combine(bone.world_space, object.local_space, object.world_space);
-                    } else {
-                        object.world_space.copy(object.local_space);
-                    }
-                    break;
-                case 'entity':
-                    var bone = spriterPose.bone_array[object.parent_index];
-                    if (bone) {
-                        spriter.Space.combine(bone.world_space, object.local_space, object.world_space);
-                    } else {
-                        object.world_space.copy(object.local_space);
                     }
                     break;
                 default:
@@ -309,7 +233,7 @@ main.start = function () {
             spriterPose,
             null
         );
-    };
+    };// end of loop
 
     requestAnimationFrame(loop);
 };
