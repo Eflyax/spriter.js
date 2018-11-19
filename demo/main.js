@@ -1,19 +1,15 @@
 goog.provide('main');
-
 goog.require('spriter');
-goog.require('atlas');
 goog.require('RenderWebGL');
 
 main.start = function () {
-    var canvas_gl = document.createElement('canvas');
+    var canvas_gl = document.getElementById('canvas');
     canvas_gl.width = window.innerWidth;
     canvas_gl.height = window.innerHeight;
     canvas_gl.style.position = 'absolute';
     canvas_gl.style.width = canvas_gl.width + 'px';
     canvas_gl.style.height = canvas_gl.height + 'px';
     canvas_gl.style.zIndex = -2;
-
-    document.body.appendChild(canvas_gl);
 
     var gl = canvas_gl.getContext('webgl') || canvas_gl.getContext('experimental-webgl');
 
@@ -24,13 +20,11 @@ main.start = function () {
         canvas_gl.style.height = canvas_gl.height + 'px';
     });
 
-    var render_webgl = new RenderWebGL(gl);
+    var renderWebGL = new RenderWebGL(gl);
 
     var camera_x = 0;
     var camera_y = 0;
     var camera_zoom = 1;
-
-    var enable_render_webgl = true;
 
     var spriter_data = null;
     var spriter_pose = null;
@@ -48,7 +42,7 @@ main.start = function () {
     var alpha = 1.0;
 
     var loadFile = function (file, callback) {
-        render_webgl.dropData(spriter_data, atlas_data);
+        renderWebGL.dropData(spriter_data, atlas_data);
 
         spriter_pose = null;
         spriter_pose_next = null;
@@ -79,7 +73,7 @@ main.start = function () {
                 };
                 var counter_dec = function () {
                     if (--counter === 0) {
-                        render_webgl.loadData(spriter_data, atlas_data, images);
+                        renderWebGL.loadData(spriter_data, atlas_data, images);
                         callback();
                     }
                 };
@@ -115,11 +109,10 @@ main.start = function () {
 
     var files = [];
 
-    var add_file = function (path, spriter_url, atlas_url) {
+    var add_file = function (path, spriter_url) {
         var file = {};
         file.path = path;
         file.spriter_url = spriter_url;
-        // file.atlas_url = atlas_url || "";
         files.push(file);
     }
 
@@ -352,8 +345,6 @@ main.start = function () {
                         object.world_space.copy(object.local_space);
                     }
                     break;
-                case 'sound':
-                    break;
                 case 'entity':
                     var bone = spriter_pose.bone_array[object.parent_index];
                     if (bone) {
@@ -362,28 +353,23 @@ main.start = function () {
                         object.world_space.copy(object.local_space);
                     }
                     break;
-                case 'variable':
-                    break;
                 default:
                     throw new Error(object.type);
             }
         });
 
-        var gl_color = render_webgl.gl_color;
+        var gl_color = renderWebGL.gl_color;
         gl_color[3] = alpha;
 
-        var gl_projection = render_webgl.gl_projection;
-        mat4x4Identity(gl_projection);
-        mat4x4Ortho(gl_projection, -gl.canvas.width / 2, gl.canvas.width / 2, -gl.canvas.height / 2, gl.canvas.height / 2, -1, 1);
-        mat4x4Translate(gl_projection, -camera_x, -camera_y, 0);
-        mat4x4Scale(gl_projection, camera_zoom, camera_zoom, camera_zoom);
-
-        if (enable_render_webgl) {
-            render_webgl.drawPose(
-                spriter_pose,
-                null
-            );
-        }
+        var WebGLProjection = renderWebGL.gl_projection;
+        mat4x4Identity(WebGLProjection);
+        mat4x4Ortho(WebGLProjection, -gl.canvas.width / 2, gl.canvas.width / 2, -gl.canvas.height / 2, gl.canvas.height / 2, -1, 1);
+        mat4x4Translate(WebGLProjection, -camera_x, -camera_y, 0);
+        mat4x4Scale(WebGLProjection, camera_zoom, camera_zoom, camera_zoom);
+        renderWebGL.drawPose(
+            spriter_pose,
+            null
+        );
     };
 
     requestAnimationFrame(loop);
