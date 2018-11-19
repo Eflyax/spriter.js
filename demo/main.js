@@ -5,50 +5,6 @@ goog.require('atlas');
 goog.require('RenderWebGL');
 
 main.start = function () {
-    document.body.style.margin = '0px';
-    document.body.style.border = '0px';
-    document.body.style.padding = '0px';
-    document.body.style.overflow = 'hidden';
-    document.body.style.fontFamily = '"PT Sans",Arial,"Helvetica Neue",Helvetica,Tahoma,sans-serif';
-
-    var controls = document.createElement('div');
-    controls.style.position = 'absolute';
-    document.body.appendChild(controls);
-
-    var add_checkbox_control = function (text, checked, callback) {
-        var control = document.createElement('div');
-        var input = document.createElement('input');
-        input.type = 'checkbox';
-        input.checked = checked;
-        input.addEventListener('click', function () {
-            callback(this.checked);
-        });
-        control.appendChild(input);
-        var label = document.createElement('label');
-        label.innerHTML = text;
-        control.appendChild(label);
-        controls.appendChild(control);
-    };
-
-    var add_range_control = function (text, init, min, max, step, callback) {
-        var control = document.createElement('div');
-        var input = document.createElement('input');
-        input.type = 'range';
-        input.value = init;
-        input.min = min;
-        input.max = max;
-        input.step = step;
-        input.addEventListener('input', function () {
-            callback(this.value);
-            label.innerHTML = text + " : " + this.value;
-        });
-        control.appendChild(input);
-        var label = document.createElement('label');
-        label.innerHTML = text + " : " + init;
-        control.appendChild(label);
-        controls.appendChild(control);
-    };
-
     var canvas_gl = document.createElement('canvas');
     canvas_gl.width = window.innerWidth;
     canvas_gl.height = window.innerHeight;
@@ -76,17 +32,6 @@ main.start = function () {
 
     var enable_render_webgl = true;
 
-    add_checkbox_control("GL", enable_render_webgl, function (checked) {
-        enable_render_webgl = checked;
-    });
-
-
-    var enable_render_debug_pose = false;
-
-    add_checkbox_control("2D Debug Pose", enable_render_debug_pose, function (checked) {
-        enable_render_debug_pose = checked;
-    });
-
     var spriter_data = null;
     var spriter_pose = null;
     var spriter_pose_next = null;
@@ -100,19 +45,7 @@ main.start = function () {
 
     var anim_blend = 0.0;
 
-    add_range_control("Anim Rate", anim_rate, -2.0, 2.0, 0.1, function (value) {
-        anim_rate = value;
-    });
-
-    add_range_control("Anim Blend", anim_blend, 0.0, 1.0, 0.01, function (value) {
-        anim_blend = value;
-    });
-
     var alpha = 1.0;
-
-    add_range_control("Alpha", alpha, 0.0, 1.0, 0.01, function (value) {
-        alpha = value;
-    });
 
     var loadFile = function (file, callback) {
         render_webgl.dropData(spriter_data, atlas_data);
@@ -123,7 +56,7 @@ main.start = function () {
 
         var file_path = file.path;
         var file_spriter_url = file_path + file.spriter_url;
-        var file_atlas_url = (file.atlas_url) ? (file_path + file.atlas_url) : ("");
+        var file_atlas_url = (file.atlas_url) ? (file_path + file.atlas_url) : ('');
 
         loadText(file_spriter_url, function (err, text) {
             if (err) {
@@ -131,22 +64,7 @@ main.start = function () {
                 return;
             }
 
-            var match = file.spriter_url.match(/\.scml$/i);
-            if (match) {
-                var parser = new DOMParser();
-                // replace &quot; with \"
-                var xml_text = text.replace(/&quot;/g, "\"");
-                var xml = parser.parseFromString(xml_text, 'text/xml');
-                var json_text = xml2json(xml, '\t');
-                // attributes marked with @, replace "@(.*)": with "\1":
-                json_text = json_text.replace(/"@(.*)":/g, "\"$1\":");
-                var json = JSON.parse(json_text);
-                var spriter_json = json.spriter_data;
-                spriter_data = new spriter.Data().load(spriter_json);
-            } else {
-                spriter_data = new spriter.Data().load(JSON.parse(text));
-            }
-
+            spriter_data = new spriter.Data().load(JSON.parse(text));
             spriter_pose = new spriter.Pose(spriter_data);
             spriter_pose_next = new spriter.Pose(spriter_data);
 
@@ -181,8 +99,6 @@ main.start = function () {
                                     }
                                 })(file));
                                 break;
-                            case 'sound':
-                                break;
                             default:
                                 console.log("TODO: load", file.type, file.name);
                                 break;
@@ -201,7 +117,7 @@ main.start = function () {
         var file = {};
         file.path = path;
         file.spriter_url = spriter_url;
-        file.atlas_url = atlas_url || "";
+        // file.atlas_url = atlas_url || "";
         files.push(file);
     }
 
@@ -461,7 +377,10 @@ main.start = function () {
         mat4x4Scale(gl_projection, camera_zoom, camera_zoom, camera_zoom);
 
         if (enable_render_webgl) {
-            render_webgl.drawPose(spriter_pose, atlas_data);
+            render_webgl.drawPose(
+                spriter_pose,
+                null
+            );
         }
     };
 
@@ -508,29 +427,4 @@ function loadImage(url, callback) {
     });
     image.src = url;
     return image;
-}
-
-function loadSound(url, callback) {
-    var req = new XMLHttpRequest();
-    if (url) {
-        req.open("GET", url, true);
-        req.responseType = 'arraybuffer';
-        req.addEventListener('error', function () {
-            callback("error", null);
-        });
-        req.addEventListener('abort', function () {
-            callback("abort", null);
-        });
-        req.addEventListener('load', function () {
-            if (req.status === 200) {
-                callback(null, req.response);
-            } else {
-                callback(req.response, null);
-            }
-        });
-        req.send();
-    } else {
-        callback("error", null);
-    }
-    return req;
 }
