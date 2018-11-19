@@ -157,11 +157,9 @@ main.start = function () {
                     if (++entity_index >= entity_keys.length) {
                         entity_index = 0;
                     }
-                    entity_keys = spriterData.getEntityKeys();
                     entity_key = entity_keys[entity_index];
                     spriterPose.setEntity(entity_key);
                 }
-                entity_keys = spriterData.getEntityKeys();
                 entity_key = entity_keys[entity_index];
                 anim_keys = spriterData.getAnimKeys(entity_key);
                 anim_key = anim_keys[anim_index];
