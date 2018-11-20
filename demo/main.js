@@ -26,15 +26,12 @@ main.start = function () {
     var renderWebGL = new RenderWebGL(gl);
 
     var camera_x = 0;
-    var camera_y = 0;
-    var camera_zoom = 1;
+    var camera_y = 230;
+    var camera_zoom = 0.9;
 
     var spriterData = null;
     var spriterPose = null;
-    var anim_time = 0;
-    var anim_length = 0;
-    var anim_rate = 1;
-    var anim_repeat = 2;
+    var animationRate = 1;
     var alpha = 1.0;
     var files = [];
 
@@ -52,11 +49,6 @@ main.start = function () {
 
             spriterData = new spriter.Data().load(JSON.parse(text));
             spriterPose = new spriter.Pose(spriterData);
-
-            // var data = new spriter.Data().load(JSON.parse(text));
-            // var pose = new spriter.Pose(data);
-            // pose.setEntity("Medieval Mage");
-            // pose.setAnim("Idle");
 
             loadText(file_atlas_url, function (err, atlas_text) {
                 var images = {};
@@ -101,7 +93,7 @@ main.start = function () {
         });
     }; // end loadFile
 
-    var add_file = function (path, jsonFile) {
+    var addFile = function (path, jsonFile) {
         var file = {};
         file.path = path;
         file.spriter_url = jsonFile;
@@ -117,66 +109,30 @@ main.start = function () {
     //     }
     // };
 
-    add_file("player/", "player.scon");
+    addFile("player/", "player.scon");
 
     var file_index = 0;
-    var entity_index = 0;
-    var anim_index = 1;
-
     var loading = false;
-
     var file = files[file_index];
 
     loading = true;
 
     loadFile(file, function () {
         loading = false;
-        var entityKeys = spriterData.getEntityKeys();
-        var entityKey = entityKeys[entity_index = 0];
+        var entityKey = spriterData.getEntityKeys()[0];
         spriterPose.setEntity(entityKey);
-        // name of animations (Idle, Run, Jump,..)
-        var animKeys = spriterData.getAnimKeys(entityKey);
-
         spriterPose.setAnim(ANIM_IDLE);
-        spriterPose.setTime(anim_time = 0);
-        anim_length = spriterPose.curAnimLength() || 1000;
     });
-    var prev_time = 0;
+    var prevTime = 0;
 
     var loop = function (time) {
         requestAnimationFrame(loop);
 
-        var dt = time - (prev_time || time);
-        prev_time = time;
+        var dt = time - (prevTime || time);
+        prevTime = time;
 
-        var entity_keys;
-        var entity_key;
-        var anim_keys;
-        var anim_key;
-
-        if (!loading) { // pokud se vše nenačetlo
-            entity_keys = spriterData.getEntityKeys();
-            spriterPose.update(dt * anim_rate);
-            anim_time += dt * anim_rate;
-            if (anim_time >= (anim_length * anim_repeat)) {
-
-                entity_key = entity_keys[entity_index];
-                anim_keys = spriterData.getAnimKeys(entity_key);
-                if (++anim_index >= anim_keys.length) {
-                    anim_index = 0;
-                    if (++entity_index >= entity_keys.length) {
-                        entity_index = 0;
-                    }
-                    entity_key = entity_keys[entity_index];
-                    spriterPose.setEntity(entity_key);
-                }
-                entity_key = entity_keys[entity_index];
-                anim_keys = spriterData.getAnimKeys(entity_key);
-                anim_key = anim_keys[anim_index];
-                spriterPose.setAnim(anim_key);
-                spriterPose.setTime(anim_time = 0);
-                anim_length = spriterPose.curAnimLength() || 1000;
-            }
+        if (!loading) {
+            spriterPose.update(dt * animationRate);
         }
 
         gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
@@ -186,6 +142,7 @@ main.start = function () {
         if (loading) {
             return;
         }
+
         spriterPose.strike();
         spriterPose.object_array.forEach(function (object) {
             switch (object.type) {
@@ -213,7 +170,7 @@ main.start = function () {
         gl_color[3] = alpha;
 
         var WebGLProjection = renderWebGL.gl_projection;
-        mat4x4Identity(WebGLProjection);
+        // mat4x4Identity(WebGLProjection);
         mat4x4Ortho(WebGLProjection, -gl.canvas.width / 2, gl.canvas.width / 2, -gl.canvas.height / 2, gl.canvas.height / 2, -1, 1);
         mat4x4Translate(WebGLProjection, -camera_x, -camera_y, 0);
         mat4x4Scale(WebGLProjection, camera_zoom, camera_zoom, camera_zoom);
