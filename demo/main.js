@@ -2,6 +2,9 @@ goog.provide('main');
 goog.require('spriter');
 goog.require('RenderWebGL');
 
+const ANIM_IDLE = 'Idle';
+const ANIM_WALK = 'Walking';
+
 main.start = function () {
     var webGlCanvas = document.getElementById('canvas');
     webGlCanvas.width = window.innerWidth;
@@ -36,8 +39,6 @@ main.start = function () {
     var files = [];
 
     var loadFile = function (files, callback) {
-        renderWebGL.dropData(spriterData);
-
         spriterPose = null;
         var file_path = file.path;
         var file_spriter_url = file_path + file.spriter_url;
@@ -52,10 +53,10 @@ main.start = function () {
             spriterData = new spriter.Data().load(JSON.parse(text));
             spriterPose = new spriter.Pose(spriterData);
 
-            var data = new spriter.Data().load(JSON.parse(text));
-            var pose = new spriter.Pose(data);
-            pose.setEntity("Medieval Mage");
-            pose.setAnim("Idle");
+            // var data = new spriter.Data().load(JSON.parse(text));
+            // var pose = new spriter.Pose(data);
+            // pose.setEntity("Medieval Mage");
+            // pose.setAnim("Idle");
 
             loadText(file_atlas_url, function (err, atlas_text) {
                 var images = {};
@@ -100,37 +101,46 @@ main.start = function () {
         });
     }; // end loadFile
 
-    var add_file = function (path, spriter_url) {
+    var add_file = function (path, jsonFile) {
         var file = {};
         file.path = path;
-        file.spriter_url = spriter_url;
+        file.spriter_url = jsonFile;
         files.push(file);
-    }
+    };
+
+    // var player = {
+    //     name: 'Jeffrey',
+    //     lastName = 'Way',
+    //
+    //     someFunction: function () {
+    //         console.log(this.name);
+    //     }
+    // };
 
     add_file("player/", "player.scon");
 
     var file_index = 0;
     var entity_index = 0;
-    var anim_index = 0;
+    var anim_index = 1;
 
     var loading = false;
 
     var file = files[file_index];
 
     loading = true;
+
     loadFile(file, function () {
         loading = false;
-        var entity_keys = spriterData.getEntityKeys();
+        var entityKeys = spriterData.getEntityKeys();
+        var entityKey = entityKeys[entity_index = 0];
+        spriterPose.setEntity(entityKey);
+        // name of animations (Idle, Run, Jump,..)
+        var animKeys = spriterData.getAnimKeys(entityKey);
 
-        var entity_key = entity_keys[entity_index = 0];
-        spriterPose.setEntity(entity_key);
-        var anim_keys = spriterData.getAnimKeys(entity_key);
-        var anim_key = anim_keys[anim_index = 0];
-        spriterPose.setAnim(anim_key);
+        spriterPose.setAnim(ANIM_IDLE);
         spriterPose.setTime(anim_time = 0);
         anim_length = spriterPose.curAnimLength() || 1000;
     });
-
     var prev_time = 0;
 
     var loop = function (time) {
@@ -144,7 +154,7 @@ main.start = function () {
         var anim_keys;
         var anim_key;
 
-        if (!loading) {
+        if (!loading) { // pokud se vše nenačetlo
             entity_keys = spriterData.getEntityKeys();
             spriterPose.update(dt * anim_rate);
             anim_time += dt * anim_rate;
